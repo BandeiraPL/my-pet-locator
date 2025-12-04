@@ -13,7 +13,9 @@ import { useToast } from "@/hooks/use-toast";
 
 // Imagens - substitua estes arquivos para personalizar
 import backgroundImage from "@/assets/background.png";
-import petImage from "@/assets/pet.jpg";
+import defaultPetImage from "@/assets/pet.jpg";
+
+const MAX_IMAGE_SIZE = 800; // Limite de resolução: 800x800px
 
 const Index = () => {
   const { toast } = useToast();
@@ -25,6 +27,48 @@ const Index = () => {
   // =============================================
 
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [petImageUrl, setPetImageUrl] = useState<string>(defaultPetImage);
+
+  // Processa e redimensiona imagem para máximo 800x800px
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let { width, height } = img;
+
+        // Redimensiona mantendo proporção se maior que 800px
+        if (width > MAX_IMAGE_SIZE || height > MAX_IMAGE_SIZE) {
+          if (width > height) {
+            height = (height / width) * MAX_IMAGE_SIZE;
+            width = MAX_IMAGE_SIZE;
+          } else {
+            width = (width / height) * MAX_IMAGE_SIZE;
+            height = MAX_IMAGE_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        const resizedUrl = canvas.toDataURL("image/jpeg", 0.9);
+        setPetImageUrl(resizedUrl);
+        
+        toast({
+          title: "Foto atualizada!",
+          description: `Imagem redimensionada para ${Math.round(width)}x${Math.round(height)}px`,
+        });
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Normaliza o telefone removendo caracteres não numéricos
   const normalizePhone = (phone: string): string => {
@@ -123,25 +167,37 @@ const Index = () => {
           />
         </h1>
 
-        {/* Avatar circular do pet */}
+        {/* Avatar circular do pet - com upload de foto */}
         <div className="relative">
-          <div className="w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden avatar-ring">
-            <img
-              src={petImage}
-              alt={`Foto do pet ${petName}`}
-              className="w-full h-full object-cover"
+          <label className="cursor-pointer block">
+            <div className="w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden avatar-ring relative group">
+              <img
+                src={petImageUrl}
+                alt={`Foto do pet ${petName}`}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-white text-sm font-serif">Trocar foto</span>
+              </div>
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+              aria-label="Selecionar foto do pet"
             />
-          </div>
+          </label>
         </div>
 
         {/* Telefone do dono (editável) */}
         <div className="flex items-center gap-2 text-foreground">
-          <Phone className="w-5 h-5 text-foreground/70" />
+          <Phone className="w-6 h-6 text-foreground/70" />
           <input
             type="tel"
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
-            className="text-xl md:text-2xl font-serif text-center bg-transparent border-none outline-none focus:ring-0 text-foreground"
+            className="text-2xl md:text-3xl font-serif text-center bg-transparent border-none outline-none focus:ring-0 text-foreground"
             placeholder="+55 00 00000-0000"
             aria-label="Telefone do dono"
           />
@@ -163,11 +219,11 @@ const Index = () => {
         {/* Botão de abrir WhatsApp */}
         <button
           onClick={handleOpenWhatsApp}
-          className="flex items-center gap-2 px-4 py-2 text-whatsapp hover:text-whatsapp/80 transition-colors duration-200"
+          className="w-full max-w-xs flex items-center justify-center gap-3 px-6 py-4 bg-whatsapp hover:bg-whatsapp/90 text-white rounded-3xl shadow-md transition-all duration-200 hover:shadow-lg active:scale-[0.98]"
           aria-label="Abrir conversa no WhatsApp"
         >
-          <MessageCircle className="w-5 h-5" />
-          <span className="text-base font-serif font-medium underline underline-offset-2">
+          <MessageCircle className="w-6 h-6" />
+          <span className="text-lg font-serif font-medium">
             Abrir WhatsApp do dono
           </span>
         </button>
