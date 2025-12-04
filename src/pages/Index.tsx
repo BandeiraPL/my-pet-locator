@@ -21,7 +21,7 @@ const Index = () => {
   // ========== CONFIGURAÇÕES EDITÁVEIS ==========
   // Altere os valores iniciais aqui:
   const [petName, setPetName] = useState("Bella");
-  const [phoneNumber, setPhoneNumber] = useState("+55 31 98765-4321");
+  const [phoneNumber, setPhoneNumber] = useState("+55 11 95194-9435");
   // =============================================
 
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
